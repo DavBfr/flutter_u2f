@@ -9,7 +9,7 @@ import 'package:logging/logging.dart';
 import 'package:u2f/u2f.dart';
 
 void main() {
-  Logger.root.level = Level.ALL; // defaults to Level.INFO
+  Logger.root.level = Level.ALL;
   Logger.root.onRecord.listen((record) {
     print('${record.level.name}: ${record.time}: ${record.message}');
   });
@@ -62,12 +62,11 @@ class _MyAppState extends State<MyApp> {
         result: () async {
           final u2f = await U2fV2Nfc.poll();
           try {
-            final result = await u2f.register(
+            return await u2f.register(
               challenge:
                   Uint8List.fromList(utf8.encode('F_YaN22CtYQPkmFiEF9a3Q')),
               appId: 'example.com',
             );
-            return result;
           } finally {
             await u2f.dispose();
           }
@@ -78,9 +77,10 @@ class _MyAppState extends State<MyApp> {
       return;
     }
 
-    print(base64Url.encode(result.registrationData));
-    print(base64Url.encode(result.clientData));
-    print(result.verifySignature(result.certificatePublicKey));
+    print('registrationData: ${base64.encode(result.registrationData)}');
+    print('clientData: ${base64.encode(result.clientData)}');
+    print('Verified: ${result.verifySignature(result.certificatePublicKey)}');
+
     setState(() {
       registration = result;
     });
@@ -92,34 +92,29 @@ class _MyAppState extends State<MyApp> {
         result: () async {
           final u2f = await U2fV2Nfc.poll();
           try {
-            final result = await u2f.authenticate(
+            return await u2f.authenticate(
               challenge:
                   Uint8List.fromList(utf8.encode('F_YaN22CtYQPkmFiEF9a3Q')),
               appId: 'example.com',
-              keyHandle: registration!.keyHandle,
+              keyHandle: base64.encode(registration!.keyHandle),
             );
-
-            print(base64Url.encode(result.signatureData));
-            print(base64Url.encode(result.clientData));
-
-            return result;
           } finally {
             await u2f.dispose();
           }
         }());
 
-    print(result);
-
-    if (result != null) {
-      print('User presence: ${result.userPresence}');
-      print('Counter: ${result.counter}');
-      print('Signature: ${result.signature}');
-      print('Verified: ${result.verifySignature(registration!.userPublicKey)}');
-
-      setState(() {
-        counter = result.counter;
-      });
+    if (result == null) {
+      print('error');
+      return;
     }
+
+    print('Client Data: ${base64.encode(result.clientData)}');
+    print('Signature: ${base64.encode(result.signatureData)}');
+    print('Verified: ${result.verifySignature(registration!.userPublicKey)}');
+
+    setState(() {
+      counter = result.counter;
+    });
   }
 
   Future<T?> progress<T>({

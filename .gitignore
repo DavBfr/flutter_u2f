@@ -7,3 +7,7 @@
 build/
 
 *.lock
+example/.metadata
+.gitignore
+example/README.md
+example/analysis_options.yaml

@@ -1,12 +1,37 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart';
+import 'package:pointycastle/digests/sha256.dart';
+import 'package:pointycastle/pointycastle.dart';
+import 'package:pointycastle/signers/ecdsa_signer.dart';
+
+// https://fidoalliance.org/specs/fido-u2f-v1.2-ps-20170411/fido-u2f-raw-message-formats-v1.2-ps-20170411.html#authentication-response-message-success
+
 class U2fSignature {
   const U2fSignature({
     required this.signatureData,
     required this.clientData,
     required this.appId,
   });
+
+  factory U2fSignature.fromWebauthn({
+    required Uint8List authenticatorData,
+    required Uint8List clientData,
+    required Uint8List signature,
+    required String appId,
+  }) {
+    final signatureData = BytesBuilder();
+    signatureData.addByte(authenticatorData[32] & 1);
+    signatureData.add(authenticatorData.sublist(33, 33 + 4));
+    signatureData.add(signature);
+
+    return U2fSignature(
+      appId: appId,
+      clientData: clientData,
+      signatureData: signatureData.toBytes(),
+    );
+  }
 
   final Uint8List signatureData;
 
@@ -35,7 +60,22 @@ class U2fSignature {
     return json.encode(response);
   }
 
-  bool verifySignature(String publicKey) {
-    return false;
+  Uint8List get signedMessage =>
+      Uint8List.fromList(sha256.convert(utf8.encode(appId)).bytes +
+          signatureData.sublist(0, 5) +
+          sha256.convert(clientData).bytes);
+
+  bool verifySignature(ECPublicKey publicKey) {
+    final signer = ECDSASigner(SHA256Digest());
+    signer.init(false, PublicKeyParameter(publicKey));
+    final sign =
+        ASN1Parser(signatureData.sublist(5)).nextObject() as ASN1Sequence;
+    return signer.verifySignature(
+      signedMessage,
+      ECSignature(
+        (sign.elements![0] as ASN1Integer).integer!,
+        (sign.elements![1] as ASN1Integer).integer!,
+      ),
+    );
   }
 }

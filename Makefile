@@ -1,5 +1,7 @@
 all: format
 
+# flutter create --platforms android --android-language java .
+
 format:
 	dart format --fix lib
 
