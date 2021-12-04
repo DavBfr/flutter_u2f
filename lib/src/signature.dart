@@ -2,16 +2,16 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 class U2fSignature {
-  const U2fSignature(
-    this.signatureData,
-    this.clientData,
-    this.challenge,
-    this.appId,
-  );
+  const U2fSignature({
+    required this.signatureData,
+    required this.clientData,
+    required this.appId,
+  });
 
   final Uint8List signatureData;
-  final String clientData;
-  final String challenge;
+
+  final Uint8List clientData;
+
   final String appId;
 
   bool get userPresence => (signatureData[0] & 1) == 1;
@@ -21,15 +21,21 @@ class U2fSignature {
 
   String get signature => base64Url.encode(signatureData.sublist(5));
 
+  String get challenge => '';
+
   @override
   String toString() {
     final response = <String, String>{
       'signatureData': base64Url.encode(signatureData),
-      'clientData': base64Url.encode(utf8.encode(clientData)),
+      'clientData': base64Url.encode(clientData),
       'challenge': challenge,
       'appId': appId,
     };
 
     return json.encode(response);
+  }
+
+  bool verifySignature(String publicKey) {
+    return false;
   }
 }

@@ -27,9 +27,9 @@ abstract class U2fV2 {
   }
 
   Future<U2fRegistration> register({
-    required String challenge,
+    required Uint8List challenge,
     required String appId,
-    required String origin,
+    String? origin,
   }) async {
     if (await version() != _version) {
       throw Exception('Incompatible U2F version');
@@ -39,11 +39,12 @@ abstract class U2fV2 {
 
     final clientData = <String, String>{
       'typ': 'navigator.id.finishEnrollment',
-      'challenge': challenge,
-      'origin': origin,
+      'challenge': base64Url.encode(challenge),
+      'origin': origin ?? 'https://$appId',
     };
     final clientDataString = json.encode(clientData);
-    final clientParam = sha256.convert(utf8.encode(clientDataString)).bytes;
+    final clientDataBytes = utf8.encode(clientDataString);
+    final clientParam = sha256.convert(clientDataBytes).bytes;
 
     final apdu = Uint8List(5 + 32 + 32 + 1);
     apdu[1] = u2fRegister;
@@ -52,14 +53,18 @@ abstract class U2fV2 {
     apdu.setAll(5, clientParam);
     apdu.setAll(5 + 32, appParam);
     final resp = await send(apdu);
-    return U2fRegistration(resp, clientDataString);
+    return U2fRegistration(
+      registrationData: resp,
+      clientData: Uint8List.fromList(clientDataBytes),
+      appId: appId,
+    );
   }
 
   Future<U2fSignature> authenticate({
     required String appId,
     required String keyHandle,
-    required String challenge,
-    required String origin,
+    required Uint8List challenge,
+    String? origin,
   }) async {
     if (await version() != _version) {
       throw Exception('Incompatible U2F version');
@@ -70,11 +75,12 @@ abstract class U2fV2 {
 
     final clientData = <String, String>{
       'typ': 'navigator.id.getAssertion',
-      'challenge': challenge,
-      'origin': origin,
+      'challenge': base64Url.encode(challenge),
+      'origin': origin ?? 'https://$appId',
     };
     final clientDataString = json.encode(clientData);
-    final clientParam = sha256.convert(utf8.encode(clientDataString)).bytes;
+    final clientDataBytes = utf8.encode(clientDataString);
+    final clientParam = sha256.convert(clientDataBytes).bytes;
 
     final apdu = Uint8List(71 + keyHandleBytes.length);
     apdu[1] = u2fAuthenticate;
@@ -86,7 +92,11 @@ abstract class U2fV2 {
     apdu[69] = keyHandleBytes.length;
     apdu.setAll(70, keyHandleBytes);
     final resp = await send(apdu);
-    return U2fSignature(resp, clientDataString, challenge, appId);
+    return U2fSignature(
+      signatureData: resp,
+      clientData: Uint8List.fromList(clientDataBytes),
+      appId: appId,
+    );
   }
 
   @mustCallSuper
