@@ -4,6 +4,7 @@ format:
 	dart format --fix lib
 
 clean:
+	test -z "$(shell git status --porcelain)"
 	git clean -fdx -e .vscode
 
 analyze:
@@ -12,7 +13,7 @@ analyze:
 
 publish: format clean
 	test -z "$(shell git status --porcelain)"
-	dart pub publish -n
-	# git tag $(shell grep version pubspec.yaml | sed 's/version\s*:\s*/v/g')
+	dart pub publish -f
+	git tag $(shell grep version pubspec.yaml | sed 's/version\s*:\s*/v/g')
 
 .PHONY: format clean publish analyze
