@@ -1,0 +1,33 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  errors:
+    always_declare_return_types: error
+    await_only_futures: error
+    directives_ordering: warning
+    file_names: error
+    prefer_final_fields: error
+    prefer_relative_imports: warning
+    prefer_single_quotes: error
+    prefer_typing_uninitialized_variables: error
+    todo: ignore
+    unawaited_futures: warning
+    unnecessary_parenthesis: error
+    use_function_type_syntax_for_parameters: warning
+
+linter:
+  rules:
+    - always_declare_return_types
+    - avoid_void_async
+    - directives_ordering
+    - omit_local_variable_types
+    - prefer_final_locals
+    - prefer_foreach
+    - prefer_interpolation_to_compose_strings
+    - prefer_relative_imports
+    - prefer_single_quotes
+    - sort_constructors_first
+    - sort_unnamed_constructors_first
+    - unnecessary_lambdas
+    - unnecessary_parenthesis
+    - sort_pub_dependencies
