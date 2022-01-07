@@ -96,7 +96,7 @@ class _MyAppState extends State<MyApp> {
               challenge:
                   Uint8List.fromList(utf8.encode('F_YaN22CtYQPkmFiEF9a3Q')),
               appId: 'example.com',
-              keyHandle: base64.encode(registration!.keyHandle),
+              keyHandles: [registration!.keyHandle],
             );
           } finally {
             await u2f.dispose();

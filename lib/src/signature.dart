@@ -10,12 +10,14 @@ import 'package:pointycastle/signers/ecdsa_signer.dart';
 
 class U2fSignature {
   const U2fSignature({
+    required this.keyHandle,
     required this.signatureData,
     required this.clientData,
     required this.appId,
   });
 
   factory U2fSignature.fromWebauthn({
+    required Uint8List keyHandle,
     required Uint8List authenticatorData,
     required Uint8List clientData,
     required Uint8List signature,
@@ -27,11 +29,14 @@ class U2fSignature {
     signatureData.add(signature);
 
     return U2fSignature(
+      keyHandle: keyHandle,
       appId: appId,
       clientData: clientData,
       signatureData: signatureData.toBytes(),
     );
   }
+
+  final Uint8List keyHandle;
 
   final Uint8List signatureData;
 
@@ -51,6 +56,7 @@ class U2fSignature {
   @override
   String toString() {
     final response = <String, String>{
+      'keyHandle': base64Url.encode(keyHandle),
       'signatureData': base64Url.encode(signatureData),
       'clientData': base64Url.encode(clientData),
       'challenge': challenge,

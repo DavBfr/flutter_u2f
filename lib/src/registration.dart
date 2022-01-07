@@ -22,6 +22,7 @@ class U2fRegistration extends U2fSignature {
     required Uint8List clientData,
     required String appId,
   }) : super(
+          keyHandle: Uint8List(0),
           signatureData: Uint8List(0),
           clientData: clientData,
           appId: appId,
@@ -95,6 +96,8 @@ class U2fRegistration extends U2fSignature {
         radix: 16);
   }
 
+  Uint8List get userPublicKeyBytes => registrationData.sublist(1, 65);
+
   ECPublicKey get userPublicKey {
     if (registrationData[1] != 0x04) {
       throw Exception('Only P-256 NIST elliptic curve supported');
@@ -106,6 +109,7 @@ class U2fRegistration extends U2fSignature {
     return ECPublicKey(q, eccDomain);
   }
 
+  @override
   Uint8List get keyHandle =>
       registrationData.sublist(67, 67 + registrationData[66]);
 

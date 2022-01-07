@@ -62,7 +62,7 @@ abstract class U2fV2 {
 
   Future<U2fSignature> authenticate({
     required String appId,
-    required String keyHandle,
+    required List<Uint8List> keyHandles,
     required Uint8List challenge,
     String? origin,
   }) async {
@@ -71,8 +71,6 @@ abstract class U2fV2 {
     }
 
     final appParam = sha256.convert(utf8.encode(appId)).bytes;
-    final keyHandleBytes = base64Url.decode(keyHandle);
-
     final clientData = <String, String>{
       'typ': 'navigator.id.getAssertion',
       'challenge': base64Url.encode(challenge),
@@ -82,21 +80,32 @@ abstract class U2fV2 {
     final clientDataBytes = utf8.encode(clientDataString);
     final clientParam = sha256.convert(clientDataBytes).bytes;
 
-    final apdu = Uint8List(71 + keyHandleBytes.length);
-    apdu[1] = u2fAuthenticate;
-    apdu[2] = cbEnforceUserPresenceAndSign;
-    apdu[4] = 65 + keyHandleBytes.length; // packet length
-    apdu[apdu.length - 1] = 0xff; // accept 256 byte response
-    apdu.setAll(5, clientParam);
-    apdu.setAll(37, appParam);
-    apdu[69] = keyHandleBytes.length;
-    apdu.setAll(70, keyHandleBytes);
-    final resp = await send(apdu);
-    return U2fSignature(
-      signatureData: resp,
-      clientData: Uint8List.fromList(clientDataBytes),
-      appId: appId,
-    );
+    Object? error;
+
+    for (final keyHandle in keyHandles) {
+      try {
+        final apdu = Uint8List(71 + keyHandle.length);
+        apdu[1] = u2fAuthenticate;
+        apdu[2] = cbEnforceUserPresenceAndSign;
+        apdu[4] = 65 + keyHandle.length; // packet length
+        apdu[apdu.length - 1] = 0xff; // accept 256 byte response
+        apdu.setAll(5, clientParam);
+        apdu.setAll(37, appParam);
+        apdu[69] = keyHandle.length;
+        apdu.setAll(70, keyHandle);
+        final resp = await send(apdu);
+        return U2fSignature(
+          keyHandle: keyHandle,
+          signatureData: resp,
+          clientData: Uint8List.fromList(clientDataBytes),
+          appId: appId,
+        );
+      } catch (e) {
+        error = e;
+      }
+    }
+
+    throw error!;
   }
 
   @mustCallSuper
