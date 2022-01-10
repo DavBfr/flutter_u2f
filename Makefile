@@ -1,6 +1,9 @@
-all: format
+all: format pubspec.lock
 
 # flutter create --platforms android --android-language java .
+
+pubspec.lock: pubspec.yaml
+	flutter pub get
 
 format:
 	dart format --fix lib

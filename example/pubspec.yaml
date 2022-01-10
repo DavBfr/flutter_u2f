@@ -12,7 +12,6 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   logging: ^1.0.2
-  quick_usb: ^0.3.0
   u2f:
     path: ../
   pointycastle: ^3.4.0

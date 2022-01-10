@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
 
 import 'commands.dart';
-import 'error.dart';
 import 'log.dart';
 import 'u2f_base.dart';
 
@@ -14,10 +13,15 @@ import 'u2f_base.dart';
 class U2fV2Nfc extends U2fV2 {
   const U2fV2Nfc._();
 
-  static Future<U2fV2Nfc> poll({Duration? timeout}) async {
-    final availability = await FlutterNfcKit.nfcAvailability;
-    if (availability != NFCAvailability.available) {
-      throw Exception('NFC not available on this device');
+  static Stream<U2fV2Nfc> poll({Duration timeout = U2fV2.timeout}) async* {
+    try {
+      final availability = await FlutterNfcKit.nfcAvailability;
+      if (availability != NFCAvailability.available) {
+        throw Exception('NFC not available on this device');
+      }
+    } catch (e) {
+      log.warning('U2fV2Nfc: $e');
+      return;
     }
 
     final tag = await FlutterNfcKit.poll(
@@ -27,22 +31,20 @@ class U2fV2Nfc extends U2fV2 {
     );
 
     if (tag.type != NFCTagType.iso7816) {
-      throw Exception('Not a U2F V2 tag');
+      log.warning('Not a U2F V2 tag');
+      return;
     }
 
     const u2f = U2fV2Nfc._();
 
-    try {
-      await u2f.send(Uint8List.fromList(selectCommand));
-    } on APDUError catch (e) {
-      if (e.status == 0x6a82) {
-        await u2f.send(Uint8List.fromList(selectCommandYubico));
-      } else {
-        rethrow;
-      }
+    final result = await u2f.send(Uint8List.fromList(selectCommand));
+    final status = (result[result.length - 2] << 8) | result[result.length - 1];
+
+    if (status == 0x6a82) {
+      await u2f.send(Uint8List.fromList(selectCommandYubico));
     }
 
-    return u2f;
+    yield u2f;
   }
 
   @override
@@ -53,19 +55,14 @@ class U2fV2Nfc extends U2fV2 {
 
     while ((status & 0xff00) == 0x6100) {
       final resp = await FlutterNfcKit.transceive(cmd);
-      log.finest(
-          'REQ ${cmd.map((e) => e.toRadixString(16).padLeft(2, '0')).join(':')}');
-      log.finest(
-          'RESP ${resp.map((e) => e.toRadixString(16).padLeft(2, '0')).join(':')}');
       status = ((0xff & resp[resp.length - 2]) << 8) |
           (0xff & resp[resp.length - 1]);
       data.add(resp.sublist(0, resp.length - 2));
       cmd = Uint8List.fromList(getResponseCommand);
     }
 
-    if (status != swNoError) {
-      throw APDUError(status);
-    }
+    // Add the last status
+    data.add([(status >> 8) & 0xff, status & 0xff]);
 
     return data.toBytes();
   }

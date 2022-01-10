@@ -5,6 +5,7 @@
 - Verify signatures
 - Add Webauthn parser
 - Allow authentication of multiple keyHandles
+- Improve API
 
 ## 1.0.0
 

@@ -60,8 +60,9 @@ class _MyAppState extends State<MyApp> {
     final result = await progress<U2fRegistration?>(
         text: const Text('Please scan your U2F key'),
         result: () async {
-          final u2f = await U2fV2Nfc.poll();
+          final u2f = await U2fV2.poll().first;
           try {
+            await u2f.init();
             return await u2f.register(
               challenge:
                   Uint8List.fromList(utf8.encode('F_YaN22CtYQPkmFiEF9a3Q')),
@@ -90,8 +91,9 @@ class _MyAppState extends State<MyApp> {
     final result = await progress<U2fSignature?>(
         text: const Text('Please scan your U2F key'),
         result: () async {
-          final u2f = await U2fV2Nfc.poll();
+          final u2f = await U2fV2.poll().first;
           try {
+            await u2f.init();
             return await u2f.authenticate(
               challenge:
                   Uint8List.fromList(utf8.encode('F_YaN22CtYQPkmFiEF9a3Q')),
@@ -118,16 +120,16 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<T?> progress<T>({
-    required Future<T> result,
+    required Future<T?> result,
     Widget? text,
   }) async {
-    BuildContext? innerContext;
+    final innerContext = Completer<BuildContext>();
 
     showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        innerContext = context;
+        innerContext.complete(context);
         return AlertDialog(
           title: const Text('U2F'),
           content: Column(
@@ -144,9 +146,8 @@ class _MyAppState extends State<MyApp> {
     try {
       return await result;
     } finally {
-      if (innerContext != null) {
-        Navigator.pop(innerContext!);
-      }
+      final dialogContext = await innerContext.future;
+      Navigator.pop(dialogContext);
     }
   }
 }
