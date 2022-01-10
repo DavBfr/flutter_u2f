@@ -1,0 +1,13 @@
+name: Api
+description: HidApi bindings for Linux and macOS
+output: ../lib/src/hid/generated_bindings.dart
+compiler-opts:
+  - -Wno-nullability-completeness
+functions:
+  rename:
+    "hid_(.*)": "$1"
+headers:
+  entry-points:
+    - "hidapi.h"
+  include-directives:
+    - "hidapi.h"

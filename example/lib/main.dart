@@ -1,120 +1,47 @@
+// ignore_for_file: avoid_print
+// ignore_for_file: implementation_imports
+
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
+import 'package:u2f/hid.dart';
 import 'package:u2f/u2f.dart';
 
-final log = Logger('nfc');
+void main() {
+  Logger.root.level = Level.ALL;
+  Logger.root.onRecord.listen((record) {
+    print('${record.level.name}: ${record.time}: ${record.message}');
+  });
 
-Future<void> main() async {
-  runApp(MaterialApp(
-    home: NfcTest(),
-  ));
+  const u2f = U2fV2();
+  runApp(const App(u2f: u2f));
 }
 
-class NfcTest extends StatelessWidget {
-  NfcTest({Key? key}) : super(key: key) {
-    Logger.root.level = Level.ALL;
-  }
+class App extends StatelessWidget {
+  const App({super.key, required this.u2f});
+
+  final U2fV2 u2f;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.purple,
-        title: const Text('NFC Test'),
-      ),
-      body: Column(
-        children: [
-          const Expanded(child: Logs()),
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            color: Colors.purple,
-            child: const SafeArea(
-              child: Scan(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class Logs extends StatefulWidget {
-  const Logs({Key? key}) : super(key: key);
-
-  @override
-  State<Logs> createState() => _LogsState();
-}
-
-class _LogsState extends State<Logs> {
-  StreamSubscription<LogRecord>? subscription;
-  ScrollController listScrollController = ScrollController();
-
-  final _data = <String>[];
-
-  @override
-  void initState() {
-    _init();
-    super.initState();
-  }
-
-  void _log(record) {
-    setState(() {
-      _data.add(record.message);
-    });
-
-    Future.delayed(const Duration(milliseconds: 300), () {
-      final position = listScrollController.position.maxScrollExtent;
-      listScrollController.jumpTo(position);
-    });
-
-    developer.log(
-      record.message,
-      name: record.loggerName,
-      error: record.error,
-      level: record.level.value,
-      stackTrace: record.stackTrace,
-      time: record.time,
-      zone: record.zone,
-      sequenceNumber: record.sequenceNumber,
-    );
-  }
-
-  void _init() {
-    subscription?.cancel();
-    Logger.root.level = Level.ALL;
-    subscription = Logger.root.onRecord.listen(_log);
-  }
-
-  @override
-  void reassemble() {
-    _init();
-    super.reassemble();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    subscription?.cancel();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: Colors.black,
-      child: DefaultTextStyle(
-        style: const TextStyle(
-          color: Colors.white,
-          fontFamily: 'Courier',
-          fontSize: 18,
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(
+          title: const Text('FIDO2 Plugin example app'),
         ),
-        child: ListView(
-          controller: listScrollController,
+        body: Row(
           children: [
-            ..._data.map(Text.new),
+            Flexible(child: HidDemo(u2f: u2f)),
+            const VerticalDivider(),
+            Flexible(
+                flex: 2,
+                child: U2fDemo(
+                  u2f: u2f,
+                  challenge: 'F_YaN22CtYQPkmFiEF9a3Q',
+                  appId: 'localhost',
+                )),
           ],
         ),
       ),
@@ -122,41 +49,160 @@ class _LogsState extends State<Logs> {
   }
 }
 
-class Scan extends StatefulWidget {
-  const Scan({Key? key}) : super(key: key);
+class U2fDemo extends StatefulWidget {
+  const U2fDemo({
+    super.key,
+    required this.u2f,
+    required this.challenge,
+    required this.appId,
+  });
+
+  final U2fV2 u2f;
+
+  final String challenge;
+
+  final String appId;
 
   @override
-  State<Scan> createState() => _ScanState();
+  State<U2fDemo> createState() => _U2fDemoState();
 }
 
-class _ScanState extends State<Scan> {
+class _U2fDemoState extends State<U2fDemo> {
   U2fRegistration? registration;
+  int? counter;
+  String? error;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        ElevatedButton(
-          onPressed: _enroll,
-          child: const Text('Enroll'),
-        ),
-        ElevatedButton(
-          onPressed: registration != null ? _verify : null,
-          child: const Text('Verify'),
-        ),
-      ],
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          Text('registration: ${registration?.keyHandle}'),
+          OutlinedButton(
+            onPressed: _enroll,
+            child: const Text('Enroll'),
+          ),
+          if (counter != null) Text('Counter: $counter'),
+          if (error != null)
+            Text(
+              'Error: $error',
+              style: const TextStyle(color: Colors.red),
+            ),
+          OutlinedButton(
+            onPressed: registration != null ? _verify : null,
+            child: const Text('Verify'),
+          ),
+        ],
+      ),
     );
+  }
+
+  Future<String> _getMessage() async {
+    final methods = await widget.u2f.checkAvailability();
+
+    final text = StringBuffer('Please ');
+
+    for (final m in methods) {
+      switch (m) {
+        case U2fV2Methods.nfc:
+          text.writeln('scan your security key');
+          break;
+        case U2fV2Methods.hid:
+          text.writeln('press the button on your security key');
+          break;
+        case U2fV2Methods.webauthn:
+          text.writeln('press the button on your security key');
+          break;
+      }
+    }
+
+    return text.toString();
+  }
+
+  Future<void> _enroll() async {
+    setState(() {
+      error = null;
+    });
+
+    try {
+      final result = await progress<U2fRegistration?>(
+          text: Text(await _getMessage()),
+          result: () async {
+            final registration = await widget.u2f.register(
+              challenge: widget.challenge,
+              appId: widget.appId,
+            );
+            return registration;
+          }());
+
+      if (result == null) {
+        print('error');
+        return;
+      }
+
+      print('registrationData: ${base64.encode(result.registrationData)}');
+      print('clientData: ${base64.encode(result.clientData)}');
+      try {
+        print(
+            'Verified: ${result.verifySignature(result.certificatePublicKey)}');
+      } catch (e) {
+        print('Verified: $e');
+      }
+
+      setState(() {
+        registration = result;
+      });
+    } catch (e) {
+      setState(() {
+        error = e.toString();
+      });
+    }
+  }
+
+  Future<void> _verify() async {
+    setState(() {
+      error = null;
+    });
+
+    try {
+      final result = await progress<U2fSignature?>(
+          text: Text(await _getMessage()),
+          result: () async {
+            final signature = await widget.u2f.authenticate(
+              challenge: widget.challenge,
+              appId: widget.appId,
+              keyHandles: [registration!.keyHandle],
+            );
+            return signature;
+          }());
+
+      if (result == null) {
+        print('error');
+        return;
+      }
+
+      print('Client Data: ${base64.encode(result.clientData)}');
+      print('Signature: ${base64.encode(result.signatureData)}');
+      print('Verified: ${result.verifySignature(registration!.userPublicKey)}');
+
+      setState(() {
+        counter = result.counter;
+      });
+    } catch (e) {
+      setState(() {
+        error = e.toString();
+      });
+    }
   }
 
   Future<T?> progress<T>({
     required Future<T?> result,
-    required BuildContext context,
     Widget? text,
   }) async {
     final innerContext = Completer<BuildContext>();
 
-    unawaited(showDialog<void>(
+    showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
@@ -172,82 +218,88 @@ class _ScanState extends State<Scan> {
           ),
         );
       },
-    ));
+    );
 
     try {
       return await result;
     } finally {
       final dialogContext = await innerContext.future;
-      // ignore: use_build_context_synchronously
-      Navigator.pop(dialogContext);
+      if (dialogContext.mounted) {
+        Navigator.pop(dialogContext);
+      }
     }
   }
+}
 
-  Future<void> _enroll() async {
-    log.info('=== ENROLL ===');
-    final result = await progress<U2fRegistration?>(
-        context: context,
-        text: const Text('Please scan your U2F key'),
-        result: () async {
-          final u2f = await U2fV2.poll().first;
-          try {
-            await u2f.init();
-            return await u2f.register(
-              challenge: 'F_YaN22CtYQPkmFiEF9a3Q',
-              appId: 'example.com',
-            );
-          } catch (e, s) {
-            log.severe('Error: $e', e, s);
-          } finally {
-            await u2f.dispose();
-          }
-        }());
+class HidDemo extends StatefulWidget {
+  const HidDemo({super.key, required this.u2f});
 
-    if (result == null) {
-      log.info('Error: No data');
-      return;
-    }
+  final U2fV2 u2f;
 
-    log.info('registrationData: ${base64.encode(result.registrationData)}');
-    log.info('clientData: ${base64.encode(result.clientData)}');
-    log.info(
-        'Verified: ${result.verifySignature(result.certificatePublicKey)}');
+  @override
+  State<HidDemo> createState() => _HidDemoState();
+}
 
-    setState(() {
-      registration = result;
+class _HidDemoState extends State<HidDemo> {
+  List<HidDevice> _hidDevices = const [];
+  late Timer _timer;
+  Set<U2fV2Methods> _methods = const {};
+
+  @override
+  void initState() {
+    super.initState();
+    _listDevices();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      _listDevices();
     });
   }
 
-  Future<void> _verify() async {
-    log.info('=== VERIFY ===');
-    final result = await progress<U2fSignature?>(
-        context: context,
-        text: const Text('Please scan your U2F key'),
-        result: () async {
-          final u2f = await U2fV2.poll().first;
-          try {
-            await u2f.init();
-            return await u2f.authenticate(
-              challenge: 'F_YaN22CtYQPkmFiEF9a3Q',
-              appId: 'example.com',
-              keyHandles: [registration!.keyHandle],
-            );
-          } catch (e, s) {
-            log.severe('Error: $e', e, s);
-          } finally {
-            await u2f.dispose();
-          }
-        }());
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
 
-    if (result == null) {
-      log.info('error');
-      return;
+  Future<void> _listDevices() async {
+    _methods = await widget.u2f.checkAvailability();
+
+    if (_methods.contains(U2fV2Methods.hid)) {
+      _hidDevices = (await hid.getDeviceList())
+          .where((e) => e.usagePage == 0xf1d0)
+          .toList()
+        ..sort((a, b) => a.usage?.compareTo(b.usage ?? 0) ?? 0)
+        ..sort((a, b) => a.usagePage?.compareTo(b.usagePage ?? 0) ?? 0)
+        ..sort((a, b) => a.productId.compareTo(b.productId))
+        ..sort((a, b) => a.vendorId.compareTo(b.vendorId))
+        ..sort((a, b) => a.productName.compareTo(b.productName));
     }
 
-    log.info('Client Data: ${base64.encode(result.clientData)}');
-    log.info('Signature: ${base64.encode(result.signatureData)}');
-    log.info(
-        'Verified: ${result.verifySignature(registration!.userPublicKey)}');
-    log.info('Counter value: ${result.counter}');
+    if (!mounted) return;
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      children: [
+        if (_methods.contains(U2fV2Methods.nfc))
+          const ListTile(
+            leading: Icon(Icons.nfc),
+            title: Text('Near Field Communication'),
+          ),
+        if (_methods.contains(U2fV2Methods.webauthn))
+          const ListTile(
+            leading: Icon(Icons.security),
+            title: Text('WebAuthn'),
+          ),
+        for (final device in _hidDevices)
+          ListTile(
+            leading: const Icon(Icons.usb),
+            title: Text(device.productName),
+            subtitle: Text(
+                '${device.vendorId.toRadixString(16).padLeft(4, '0')}:${device.productId.toRadixString(16).padLeft(4, '0')}   ${device.serialNumber}'),
+          ),
+      ],
+    );
   }
 }

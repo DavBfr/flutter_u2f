@@ -1,0 +1,10 @@
+name: Api
+description: HidApi bindings for Linux and macOS
+output: ../lib/src/win/generated_bindings.dart
+compiler-opts:
+  - -Wno-nullability-completeness
+headers:
+  entry-points:
+    - "u2f.h"
+  include-directives:
+    - "u2f.h"

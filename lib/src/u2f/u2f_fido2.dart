@@ -1,3 +1,5 @@
+// ignore_for_file: require_trailing_commas
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -10,7 +12,7 @@ import 'error.dart';
 import 'log.dart';
 import 'registration.dart';
 import 'signature.dart';
-import 'u2f_nfc.dart';
+import 'u2f_base.dart';
 
 /// FIDO U2F Raw Message Formats:
 /// https://fidoalliance.org/specs/fido-u2f-v1.2-ps-20170411/fido-u2f-raw-message-formats-v1.2-ps-20170411.html
@@ -29,19 +31,10 @@ class _Fido2Response {
   final int status;
 }
 
-abstract class U2fV2 {
-  const U2fV2();
+typedef OnContinuePolling = bool Function();
 
-  static Stream<U2fV2> poll({Duration timeout = timeout}) async* {
-    final nfcAvailability = await U2fV2Nfc.availability();
-    if (nfcAvailability == NFCAvailability.available) {
-      yield* U2fV2Nfc.poll(timeout: timeout);
-    }
-  }
-
-  static Future<bool> availability() async {
-    return (await U2fV2Nfc.availability()) == NFCAvailability.available;
-  }
+abstract class U2fV2Fido2 extends U2fV2Base {
+  U2fV2Fido2();
 
   static const _version = 'U2F_V2';
   static const delay = Duration(milliseconds: 400);
@@ -50,11 +43,13 @@ abstract class U2fV2 {
   @protected
   Future<Uint8List> send(Uint8List apdu);
 
+  @override
   @mustCallSuper
   Future<void> init() async {
+    super.init();
     final v = await version();
     if (v != _version) {
-      throw Exception('Incompatible U2F version "$v"');
+      throw U2fException('Incompatible U2F version "$v"');
     }
   }
 
@@ -85,15 +80,22 @@ abstract class U2fV2 {
         resp[resp.lengthInBytes - 2] << 8 | resp[resp.lengthInBytes - 1]);
 
     final stopWatch = Stopwatch()..start();
-    while (fr.status == _Fido2Response.swConditionsNotSatisfied) {
-      // Requires user presence. Try again
-      await Future.delayed(delay);
-      if (stopWatch.elapsed > timeout) {
-        throw Exception('Timeout waiting for user presence');
+    try {
+      while (fr.status == _Fido2Response.swConditionsNotSatisfied) {
+        if (cancelOperations) {
+          throw const U2fCancel('Cancel waiting for user presence');
+        }
+        // Requires user presence. Try again
+        await Future.delayed(delay);
+        if (stopWatch.elapsed > timeout) {
+          throw const U2fTimeout('Timeout waiting for user presence');
+        }
+        resp = await send(apdu);
+        fr = _Fido2Response(resp.sublist(0, resp.lengthInBytes - 2),
+            resp[resp.lengthInBytes - 2] << 8 | resp[resp.lengthInBytes - 1]);
       }
-      resp = await send(apdu);
-      fr = _Fido2Response(resp.sublist(0, resp.lengthInBytes - 2),
-          resp[resp.lengthInBytes - 2] << 8 | resp[resp.lengthInBytes - 1]);
+    } finally {
+      stopWatch.stop();
     }
 
     log.finest(
@@ -101,18 +103,22 @@ abstract class U2fV2 {
     return fr;
   }
 
-  Future<U2fRegistration> register({
-    required String challenge,
-    required String appId,
-    String? origin,
-    Duration timeout = timeout,
-  }) async {
+  @override
+  Future<U2fRegistration> register(
+    String challenge,
+    String appId,
+    String origin,
+    String name,
+    String displayName,
+    List<Uint8List> existingKeyHandles,
+    Duration timeout,
+  ) async {
     final appParam = sha256.convert(utf8.encode(appId)).bytes;
 
     final clientData = <String, String>{
       'typ': 'navigator.id.finishEnrollment',
       'challenge': challenge,
-      'origin': origin ?? 'https://$appId',
+      'origin': origin,
     };
     final clientDataString = json.encode(clientData);
     final clientDataBytes = utf8.encode(clientDataString);
@@ -130,18 +136,19 @@ abstract class U2fV2 {
     );
   }
 
-  Future<U2fSignature> authenticate({
-    required String appId,
-    required List<Uint8List> keyHandles,
-    required String challenge,
-    String? origin,
-    Duration timeout = timeout,
-  }) async {
+  @override
+  Future<U2fSignature> authenticate(
+    String appId,
+    List<Uint8List> keyHandles,
+    String challenge,
+    String origin,
+    Duration timeout,
+  ) async {
     final appParam = sha256.convert(utf8.encode(appId)).bytes;
     final clientData = <String, String>{
       'typ': 'navigator.id.getAssertion',
       'challenge': challenge,
-      'origin': origin ?? 'https://$appId',
+      'origin': origin,
     };
     final clientDataString = json.encode(clientData);
     final clientDataBytes = utf8.encode(clientDataString);
@@ -175,11 +182,6 @@ abstract class U2fV2 {
       }
     }
 
-    throw error!;
-  }
-
-  @mustCallSuper
-  Future<void> dispose() async {
-    log.fine('Finish U2F session');
+    throw error ?? const U2fCancel('No more keyHandles');
   }
 }

@@ -1,0 +1,46 @@
+{
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.expand": false,
+  "explorer.fileNesting.patterns": {
+    "pubspec.yaml": ".flutter-plugins, .packages, .dart_tool, .flutter-plugins-dependencies, .metadata, .packages, pubspec.lock, build.yaml, analysis_options.yaml, all_lint_rules.yaml, pubspec_overrides.yaml",
+    ".drone.yml": "Dockerfile, Makefile, captain-definition",
+    ".gitignore": ".gitattributes, .gitmodules, .gitmessage, .mailmap, .git-blame*",
+    "readme.*": "authors, backers.md, changelog*, citation*, code_of_conduct.md, codeowners, contributing.md, contributors, copying, credits, governance.md, history.md, license*, maintainers, readme*, security.md, sponsors.md",
+    "*.dart": "$(capture).g.dart",
+    "Makefile": "branding.mk, Dockerfile, .dockerignore, build-config.json, bitbucket-pipelines.yml"
+  },
+  "[dart]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": false,
+    "editor.suggest.insertMode": "replace",
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "explicit"
+    }
+  },
+  "cSpell.words": [
+    "apdu",
+    "capdu",
+    "desfire",
+    "dylib",
+    "ecdsa",
+    "Fhid",
+    "fido",
+    "gamepad",
+    "hidraw",
+    "Keepalive",
+    "libhidapi",
+    "malloc",
+    "mifare",
+    "nonblocking",
+    "nullptr",
+    "recv",
+    "transceive",
+    "webauthn",
+    "webusb",
+    "Yubico"
+  ],
+  "files.associations": {
+    "__config": "c"
+  }
+}

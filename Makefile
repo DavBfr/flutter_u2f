@@ -1,6 +1,4 @@
-all: format pubspec.lock
-
-# flutter create --platforms android --android-language java .
+all: format pubspec.lock example/.metadata
 
 pubspec.lock: pubspec.yaml
 	flutter pub get
@@ -22,3 +20,6 @@ publish: format clean
 	git tag $(shell grep version pubspec.yaml | sed 's/version\s*:\s*/v/g')
 
 .PHONY: format clean publish analyze
+
+example/.metadata:
+	flutter create --project-name u2f_example example

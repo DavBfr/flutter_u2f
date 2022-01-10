@@ -1,9 +1,11 @@
 # Changelog
 
-## 1.4.0
+## 2.0.0
 
 - Update dependencies
 - Update example
+- Add support for USB-HID (Linux, macOS)
+- Add support for Webauthn (Web, Windows)
 
 ## 1.3.0
 

@@ -1,4 +1,3 @@
-export 'src/registration.dart';
-export 'src/signature.dart';
-export 'src/u2f_base.dart';
-export 'src/u2f_nfc.dart';
+export 'src/u2f/registration.dart';
+export 'src/u2f/signature.dart';
+export 'src/u2f/u2f.dart';

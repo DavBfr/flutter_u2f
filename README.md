@@ -1,45 +1,36 @@
-# u2f
+# FIDO Universal 2nd Factor
 
-FIDO Universal 2nd Factor
-
-This package supports NFC Fido2 kays on iOS and Android.
+This package supports NFC, USB and Webauthn Fido2 kays on iOS, Android, Windows, Linux, macOS, and Web.
 
 ## Getting Started
 
 ### Register
 
 ```dart
-final u2f = await U2fV2Nfc.poll();
-try {
-  return await u2f.register(
-    challenge: 'some random data',
-    appId: 'example.com',
-  );
-} finally {
-  await u2f.dispose();
-}
+const u2f = U2fV2();
+return await u2f.register(
+  challenge: 'some random data',
+  appId: 'example.com',
+);
 ```
 
 ### Authenticate
 
 ```dart
-final u2f = await U2fV2Nfc.poll();
-try {
-  return await u2f.authenticate(
-    challenge: 'some random data',
-    appId: 'example.com',
-    keyHandles: [
-      // ... a list of registered key handles
-    ],
-  );
-} finally {
-  await u2f.dispose();
-}
+const u2f = U2fV2();
+return await u2f.authenticate(
+  challenge: 'some random data',
+  appId: 'example.com',
+  keyHandles: [
+    // ... a list of registered key handles
+  ],
+);
 ```
 
 ## Setup
 
 Follow the [flutter_nfc_kit](https://pub.dev/packages/flutter_nfc_kit) package setup section.
+
 On iOS, your new `Info.plist` lines should look like this:
 
 ```xml

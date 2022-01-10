@@ -6,25 +6,23 @@ import 'package:crypto/crypto.dart';
 import 'package:pointycastle/export.dart';
 import 'package:pointycastle/pointycastle.dart';
 
+import 'error.dart';
 import 'signature.dart';
 
 // https://fidoalliance.org/specs/fido-u2f-v1.2-ps-20170411/fido-u2f-raw-message-formats-v1.2-ps-20170411.html#h3_registration-response-message-success
 
-Map<dynamic, dynamic> _decodeCbor(Uint8List data) {
-  final value = cbor.decode(data);
-  return value.toJson() as Map;
+CborMap _decodeCbor(Uint8List data) {
+  return cbor.decode(data) as CborMap;
 }
 
 class U2fRegistration extends U2fSignature {
   U2fRegistration({
     required this.registrationData,
-    required Uint8List clientData,
-    required String appId,
+    required super.clientData,
+    required super.appId,
   }) : super(
           keyHandle: Uint8List(0),
           signatureData: Uint8List(0),
-          clientData: clientData,
-          appId: appId,
         );
 
   factory U2fRegistration.fromWebauthn({
@@ -33,9 +31,10 @@ class U2fRegistration extends U2fSignature {
     required String appId,
   }) {
     final decodedAttestation = _decodeCbor(attestationObject);
-    // print(decodedAttestation);
 
-    final authDataBytes = Uint8List.fromList(decodedAttestation['authData']);
+    final authDataBytes = Uint8List.fromList(
+      (decodedAttestation[CborString('authData')]! as CborBytes).bytes,
+    );
     final authData = authDataBytes.buffer.asByteData();
     // final flags = authData.getInt8(32);
     // final counter = authData.getUint32(33);
@@ -53,15 +52,30 @@ class U2fRegistration extends U2fSignature {
     // -1: The -1 field describes this key's "curve type". The value 1 indicates the that this key uses the "P-256" curve.
 
     final registrationData = BytesBuilder();
-    registrationData.addByte(0x05);
-    registrationData.addByte(0x04);
-    registrationData.add(publicKeyObject[-2]);
-    registrationData.add(publicKeyObject[-3]);
+    registrationData.addByte(0x05); // reserved byte
+    registrationData.addByte(0x04); // user public key type
+    // user public key X coordinate
+    final x = publicKeyObject[const CborSmallInt(4294967294)] ??
+        publicKeyObject[const CborSmallInt(-2)];
+    registrationData.add((x! as CborBytes).bytes);
+    // user public key Y coordinate
+    final y = publicKeyObject[const CborSmallInt(4294967293)] ??
+        publicKeyObject[const CborSmallInt(-3)];
+    registrationData.add((y! as CborBytes).bytes);
+    // Length of the key ID
     registrationData.addByte(credentialIdLength);
+    // key ID
     registrationData.add(authDataBytes.sublist(55, 55 + credentialIdLength));
-    if (decodedAttestation['fmt'] == 'fido-u2f') {
-      registrationData.add(decodedAttestation['attStmt']['x5c'][0]);
-      registrationData.add(decodedAttestation['attStmt']['sig']);
+
+    // We have an x509 certificate
+    if (decodedAttestation[CborString('fmt')] == CborString('fido-u2f')) {
+      final attStmt = decodedAttestation[CborString('attStmt')]! as CborMap;
+      // key's X509 certificate
+      registrationData.add(
+        ((attStmt[CborString('x5c')]! as CborList)[0] as CborBytes).bytes,
+      );
+      // Signature object
+      registrationData.add((attStmt[CborString('sig')]! as CborBytes).bytes);
     }
 
     return U2fRegistration(
@@ -75,6 +89,9 @@ class U2fRegistration extends U2fSignature {
 
   Uint8List get certificate {
     final cert = 67 + registrationData[66];
+    if (cert >= registrationData.length) {
+      throw const U2fException('No certificate available');
+    }
     final sign = ASN1Utils.decodeLength(registrationData.sublist(cert));
     return registrationData.sublist(cert, cert + sign + 4);
   }
@@ -84,22 +101,24 @@ class U2fRegistration extends U2fSignature {
     final cert = 67 + registrationData[66];
     final sign = ASN1Utils.decodeLength(registrationData.sublist(cert));
     return Uint8List.fromList(
-        [1, 0, 0, 0, 0] + registrationData.sublist(cert + sign + 4));
+      [1, 0, 0, 0, 0] + registrationData.sublist(cert + sign + 4),
+    );
   }
 
   /// Decode a BigInt from bytes in big-endian encoding.
   /// Twos compliment.
   BigInt _decodeBigInt(Uint8List bytes) {
     return BigInt.parse(
-        bytes.map((e) => e.toRadixString(16).padLeft(2, '0')).join(),
-        radix: 16);
+      bytes.map((e) => e.toRadixString(16).padLeft(2, '0')).join(),
+      radix: 16,
+    );
   }
 
   Uint8List get userPublicKeyBytes => registrationData.sublist(1, 65);
 
   ECPublicKey get userPublicKey {
     if (registrationData[1] != 0x04) {
-      throw Exception('Only P-256 NIST elliptic curve supported');
+      throw const U2fException('Only P-256 NIST elliptic curve supported');
     }
     final qx = _decodeBigInt(registrationData.sublist(2, 2 + 32));
     final qy = _decodeBigInt(registrationData.sublist(2 + 32, 2 + 32 + 32));
@@ -120,7 +139,7 @@ class U2fRegistration extends U2fSignature {
         Uint8List.fromList((pk.elements![1] as ASN1BitString).stringValues!);
 
     if (kp[0] != 0x04) {
-      throw Exception('Only P-256 NIST elliptic curve supported');
+      throw const U2fException('Only P-256 NIST elliptic curve supported');
     }
     final qx = _decodeBigInt(kp.sublist(1, 1 + 32));
     final qy = _decodeBigInt(kp.sublist(1 + 32, 1 + 32 + 32));
@@ -130,11 +149,13 @@ class U2fRegistration extends U2fSignature {
   }
 
   @override
-  Uint8List get signedMessage => Uint8List.fromList([0] +
-      sha256.convert(utf8.encode(appId)).bytes +
-      sha256.convert(clientData).bytes +
-      keyHandle +
-      registrationData.sublist(1, 66));
+  Uint8List get signedMessage => Uint8List.fromList(
+        [0] +
+            sha256.convert(utf8.encode(appId)).bytes +
+            sha256.convert(clientData).bytes +
+            keyHandle +
+            registrationData.sublist(1, 66),
+      );
 
   @override
   String toString() {
