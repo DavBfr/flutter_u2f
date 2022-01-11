@@ -1,8 +1,9 @@
 # Changelog
 
-## 1.1.1
+## 1.2.0
 
 - Fix Fido2 version command
+- Use a string challenge
 
 ## 1.1.0
 

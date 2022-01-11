@@ -2,7 +2,6 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
@@ -64,8 +63,7 @@ class _MyAppState extends State<MyApp> {
           try {
             await u2f.init();
             return await u2f.register(
-              challenge:
-                  Uint8List.fromList(utf8.encode('F_YaN22CtYQPkmFiEF9a3Q')),
+              challenge: 'F_YaN22CtYQPkmFiEF9a3Q',
               appId: 'example.com',
             );
           } finally {
@@ -95,8 +93,7 @@ class _MyAppState extends State<MyApp> {
           try {
             await u2f.init();
             return await u2f.authenticate(
-              challenge:
-                  Uint8List.fromList(utf8.encode('F_YaN22CtYQPkmFiEF9a3Q')),
+              challenge: 'F_YaN22CtYQPkmFiEF9a3Q',
               appId: 'example.com',
               keyHandles: [registration!.keyHandle],
             );

@@ -95,7 +95,7 @@ abstract class U2fV2 {
   }
 
   Future<U2fRegistration> register({
-    required Uint8List challenge,
+    required String challenge,
     required String appId,
     String? origin,
     Duration timeout = timeout,
@@ -104,7 +104,7 @@ abstract class U2fV2 {
 
     final clientData = <String, String>{
       'typ': 'navigator.id.finishEnrollment',
-      'challenge': base64Url.encode(challenge),
+      'challenge': challenge,
       'origin': origin ?? 'https://$appId',
     };
     final clientDataString = json.encode(clientData);
@@ -126,14 +126,14 @@ abstract class U2fV2 {
   Future<U2fSignature> authenticate({
     required String appId,
     required List<Uint8List> keyHandles,
-    required Uint8List challenge,
+    required String challenge,
     String? origin,
     Duration timeout = timeout,
   }) async {
     final appParam = sha256.convert(utf8.encode(appId)).bytes;
     final clientData = <String, String>{
       'typ': 'navigator.id.getAssertion',
-      'challenge': base64Url.encode(challenge),
+      'challenge': challenge,
       'origin': origin ?? 'https://$appId',
     };
     final clientDataString = json.encode(clientData);
