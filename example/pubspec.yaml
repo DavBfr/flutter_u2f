@@ -6,7 +6,6 @@ environment:
   sdk: ">=2.12.0 <3.0.0"
 
 dependencies:
-  convert:
   flutter:
     sdk: flutter
   flutter_localizations:
@@ -14,7 +13,6 @@ dependencies:
   logging: ^1.0.2
   u2f:
     path: ../
-  pointycastle: ^3.4.0
 
 dev_dependencies:
   flutter_lints: ^1.0.0

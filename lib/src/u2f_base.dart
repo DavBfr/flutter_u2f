@@ -47,17 +47,13 @@ abstract class U2fV2 {
   Future<void> init() async {
     final v = await version();
     if (v != _version) {
-      throw Exception('Incompatible U2F version $v');
+      throw Exception('Incompatible U2F version "$v"');
     }
   }
 
   Future<String> version() async {
-    final data = await send(Uint8List.fromList(getVersionCommand));
-    var offset = data.length - 1;
-    while (data[offset] == 0 && offset > 0) {
-      offset--;
-    }
-    return latin1.decode(data.sublist(0, offset));
+    final data = await _sendFido2(u2fVersion, timeout: timeout);
+    return latin1.decode(data.bytes);
   }
 
   Future<_Fido2Response> _sendFido2(

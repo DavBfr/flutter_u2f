@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.1
+
+- Fix Fido2 version command
+
 ## 1.1.0
 
 - Verify signatures
