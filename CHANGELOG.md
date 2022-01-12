@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.0
+
+- Add availability methods
+
 ## 1.2.0
 
 - Fix Fido2 version command

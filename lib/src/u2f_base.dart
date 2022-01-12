@@ -32,8 +32,15 @@ class _Fido2Response {
 abstract class U2fV2 {
   const U2fV2();
 
-  static Stream<U2fV2> poll({Duration timeout = timeout}) {
-    return U2fV2Nfc.poll(timeout: timeout);
+  static Stream<U2fV2> poll({Duration timeout = timeout}) async* {
+    final nfcAvailability = await U2fV2Nfc.availability();
+    if (nfcAvailability == NFCAvailability.available) {
+      yield* U2fV2Nfc.poll(timeout: timeout);
+    }
+  }
+
+  static Future<bool> availability() async {
+    return (await U2fV2Nfc.availability()) == NFCAvailability.available;
   }
 
   static const _version = 'U2F_V2';
