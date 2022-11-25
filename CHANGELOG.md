@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.4.0
+
+- Update dependencies
+- Update example
+
 ## 1.3.0
 
 - Add availability methods

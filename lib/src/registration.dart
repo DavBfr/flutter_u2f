@@ -11,9 +11,8 @@ import 'signature.dart';
 // https://fidoalliance.org/specs/fido-u2f-v1.2-ps-20170411/fido-u2f-raw-message-formats-v1.2-ps-20170411.html#h3_registration-response-message-success
 
 Map<dynamic, dynamic> _decodeCbor(Uint8List data) {
-  final decoder = Cbor();
-  decoder.decodeFromList(data);
-  return decoder.getDecodedData()![0];
+  final value = cbor.decode(data);
+  return value.toJson() as Map;
 }
 
 class U2fRegistration extends U2fSignature {

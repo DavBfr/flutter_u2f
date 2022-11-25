@@ -1,128 +1,162 @@
-// ignore_for_file: avoid_print
-
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:u2f/u2f.dart';
 
-void main() {
-  Logger.root.level = Level.ALL;
-  Logger.root.onRecord.listen((record) {
-    print('${record.level.name}: ${record.time}: ${record.message}');
-  });
+final log = Logger('nfc');
 
+Future<void> main() async {
   runApp(MaterialApp(
-    home: Scaffold(
-      appBar: AppBar(
-        title: const Text('Plugin example app'),
-      ),
-      body: const MyApp(),
-    ),
+    home: NfcTest(),
   ));
 }
 
-class MyApp extends StatefulWidget {
-  const MyApp({Key? key}) : super(key: key);
-
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  U2fRegistration? registration;
-  int? counter;
+class NfcTest extends StatelessWidget {
+  NfcTest({Key? key}) : super(key: key) {
+    Logger.root.level = Level.ALL;
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.purple,
+        title: const Text('NFC Test'),
+      ),
+      body: Column(
         children: [
-          Text('registration: ${registration?.keyHandle}'),
-          OutlinedButton(
-            onPressed: _enroll,
-            child: const Text('Enroll'),
-          ),
-          Text('Counter: $counter'),
-          OutlinedButton(
-            onPressed: registration != null ? _verify : null,
-            child: const Text('Verify'),
+          const Expanded(child: Logs()),
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            color: Colors.purple,
+            child: const SafeArea(
+              child: Scan(),
+            ),
           ),
         ],
       ),
     );
   }
+}
 
-  Future<void> _enroll() async {
-    final result = await progress<U2fRegistration?>(
-        text: const Text('Please scan your U2F key'),
-        result: () async {
-          final u2f = await U2fV2.poll().first;
-          try {
-            await u2f.init();
-            return await u2f.register(
-              challenge: 'F_YaN22CtYQPkmFiEF9a3Q',
-              appId: 'example.com',
-            );
-          } finally {
-            await u2f.dispose();
-          }
-        }());
+class Logs extends StatefulWidget {
+  const Logs({Key? key}) : super(key: key);
 
-    if (result == null) {
-      print('error');
-      return;
-    }
+  @override
+  State<Logs> createState() => _LogsState();
+}
 
-    print('registrationData: ${base64.encode(result.registrationData)}');
-    print('clientData: ${base64.encode(result.clientData)}');
-    print('Verified: ${result.verifySignature(result.certificatePublicKey)}');
+class _LogsState extends State<Logs> {
+  StreamSubscription<LogRecord>? subscription;
+  ScrollController listScrollController = ScrollController();
 
-    setState(() {
-      registration = result;
-    });
+  final _data = <String>[];
+
+  @override
+  void initState() {
+    _init();
+    super.initState();
   }
 
-  Future<void> _verify() async {
-    final result = await progress<U2fSignature?>(
-        text: const Text('Please scan your U2F key'),
-        result: () async {
-          final u2f = await U2fV2.poll().first;
-          try {
-            await u2f.init();
-            return await u2f.authenticate(
-              challenge: 'F_YaN22CtYQPkmFiEF9a3Q',
-              appId: 'example.com',
-              keyHandles: [registration!.keyHandle],
-            );
-          } finally {
-            await u2f.dispose();
-          }
-        }());
-
-    if (result == null) {
-      print('error');
-      return;
-    }
-
-    print('Client Data: ${base64.encode(result.clientData)}');
-    print('Signature: ${base64.encode(result.signatureData)}');
-    print('Verified: ${result.verifySignature(registration!.userPublicKey)}');
-
+  void _log(record) {
     setState(() {
-      counter = result.counter;
+      _data.add(record.message);
     });
+
+    Future.delayed(const Duration(milliseconds: 300), () {
+      final position = listScrollController.position.maxScrollExtent;
+      listScrollController.jumpTo(position);
+    });
+
+    developer.log(
+      record.message,
+      name: record.loggerName,
+      error: record.error,
+      level: record.level.value,
+      stackTrace: record.stackTrace,
+      time: record.time,
+      zone: record.zone,
+      sequenceNumber: record.sequenceNumber,
+    );
+  }
+
+  void _init() {
+    subscription?.cancel();
+    Logger.root.level = Level.ALL;
+    subscription = Logger.root.onRecord.listen(_log);
+  }
+
+  @override
+  void reassemble() {
+    _init();
+    super.reassemble();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    subscription?.cancel();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.black,
+      child: DefaultTextStyle(
+        style: const TextStyle(
+          color: Colors.white,
+          fontFamily: 'Courier',
+          fontSize: 18,
+        ),
+        child: ListView(
+          controller: listScrollController,
+          children: [
+            ..._data.map(Text.new),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class Scan extends StatefulWidget {
+  const Scan({Key? key}) : super(key: key);
+
+  @override
+  State<Scan> createState() => _ScanState();
+}
+
+class _ScanState extends State<Scan> {
+  U2fRegistration? registration;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        ElevatedButton(
+          onPressed: _enroll,
+          child: const Text('Enroll'),
+        ),
+        ElevatedButton(
+          onPressed: registration != null ? _verify : null,
+          child: const Text('Verify'),
+        ),
+      ],
+    );
   }
 
   Future<T?> progress<T>({
     required Future<T?> result,
+    required BuildContext context,
     Widget? text,
   }) async {
     final innerContext = Completer<BuildContext>();
 
-    showDialog<void>(
+    unawaited(showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
@@ -138,13 +172,82 @@ class _MyAppState extends State<MyApp> {
           ),
         );
       },
-    );
+    ));
 
     try {
       return await result;
     } finally {
       final dialogContext = await innerContext.future;
+      // ignore: use_build_context_synchronously
       Navigator.pop(dialogContext);
     }
+  }
+
+  Future<void> _enroll() async {
+    log.info('=== ENROLL ===');
+    final result = await progress<U2fRegistration?>(
+        context: context,
+        text: const Text('Please scan your U2F key'),
+        result: () async {
+          final u2f = await U2fV2.poll().first;
+          try {
+            await u2f.init();
+            return await u2f.register(
+              challenge: 'F_YaN22CtYQPkmFiEF9a3Q',
+              appId: 'example.com',
+            );
+          } catch (e, s) {
+            log.severe('Error: $e', e, s);
+          } finally {
+            await u2f.dispose();
+          }
+        }());
+
+    if (result == null) {
+      log.info('Error: No data');
+      return;
+    }
+
+    log.info('registrationData: ${base64.encode(result.registrationData)}');
+    log.info('clientData: ${base64.encode(result.clientData)}');
+    log.info(
+        'Verified: ${result.verifySignature(result.certificatePublicKey)}');
+
+    setState(() {
+      registration = result;
+    });
+  }
+
+  Future<void> _verify() async {
+    log.info('=== VERIFY ===');
+    final result = await progress<U2fSignature?>(
+        context: context,
+        text: const Text('Please scan your U2F key'),
+        result: () async {
+          final u2f = await U2fV2.poll().first;
+          try {
+            await u2f.init();
+            return await u2f.authenticate(
+              challenge: 'F_YaN22CtYQPkmFiEF9a3Q',
+              appId: 'example.com',
+              keyHandles: [registration!.keyHandle],
+            );
+          } catch (e, s) {
+            log.severe('Error: $e', e, s);
+          } finally {
+            await u2f.dispose();
+          }
+        }());
+
+    if (result == null) {
+      log.info('error');
+      return;
+    }
+
+    log.info('Client Data: ${base64.encode(result.clientData)}');
+    log.info('Signature: ${base64.encode(result.signatureData)}');
+    log.info(
+        'Verified: ${result.verifySignature(registration!.userPublicKey)}');
+    log.info('Counter value: ${result.counter}');
   }
 }

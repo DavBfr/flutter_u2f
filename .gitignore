@@ -7,7 +7,7 @@
 build/
 
 *.lock
-example/.metadata
+
+.flutter-plugins
 .gitignore
-example/README.md
-example/analysis_options.yaml
+.flutter-plugins-dependencies
