@@ -18,6 +18,7 @@ enum NFCTagType {
   unknown,
 }
 
+// ignore: avoid_classes_with_only_static_members
 class FlutterNfcKit {
   static Future<NFCAvailability> get nfcAvailability async =>
       NFCAvailability.not_supported;
