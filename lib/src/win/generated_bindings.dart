@@ -110,9 +110,8 @@ class Api {
   }
 
   late final _FreeRegisterPtr = _lookup<
-          ffi
-          .NativeFunction<ffi.Int Function(ffi.Pointer<REGISTER_ATTESTATION>)>>(
-      'FreeRegister');
+      ffi.NativeFunction<
+          ffi.Int Function(ffi.Pointer<REGISTER_ATTESTATION>)>>('FreeRegister');
   late final _FreeRegister = _FreeRegisterPtr.asFunction<
       int Function(ffi.Pointer<REGISTER_ATTESTATION>)>();
 
@@ -125,9 +124,8 @@ class Api {
   }
 
   late final _FreeValidatePtr = _lookup<
-          ffi
-          .NativeFunction<ffi.Int Function(ffi.Pointer<VALIDATE_ATTESTATION>)>>(
-      'FreeValidate');
+      ffi.NativeFunction<
+          ffi.Int Function(ffi.Pointer<VALIDATE_ATTESTATION>)>>('FreeValidate');
   late final _FreeValidate = _FreeValidatePtr.asFunction<
       int Function(ffi.Pointer<VALIDATE_ATTESTATION>)>();
 }
