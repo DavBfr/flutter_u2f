@@ -36,12 +36,13 @@ class App extends StatelessWidget {
             Flexible(child: HidDemo(u2f: u2f)),
             const VerticalDivider(),
             Flexible(
-                flex: 2,
-                child: U2fDemo(
-                  u2f: u2f,
-                  challenge: 'F_YaN22CtYQPkmFiEF9a3Q',
-                  appId: 'localhost',
-                )),
+              flex: 2,
+              child: U2fDemo(
+                u2f: u2f,
+                challenge: 'F_YaN22CtYQPkmFiEF9a3Q',
+                appId: 'localhost',
+              ),
+            ),
           ],
         ),
       ),
@@ -127,14 +128,15 @@ class _U2fDemoState extends State<U2fDemo> {
 
     try {
       final result = await progress<U2fRegistration?>(
-          text: Text(await _getMessage()),
-          result: () async {
-            final registration = await widget.u2f.register(
-              challenge: widget.challenge,
-              appId: widget.appId,
-            );
-            return registration;
-          }());
+        text: Text(await _getMessage()),
+        result: () async {
+          final registration = await widget.u2f.register(
+            challenge: widget.challenge,
+            appId: widget.appId,
+          );
+          return registration;
+        }(),
+      );
 
       if (result == null) {
         print('error');
@@ -145,7 +147,8 @@ class _U2fDemoState extends State<U2fDemo> {
       print('clientData: ${base64.encode(result.clientData)}');
       try {
         print(
-            'Verified: ${result.verifySignature(result.certificatePublicKey)}');
+          'Verified: ${result.verifySignature(result.certificatePublicKey)}',
+        );
       } catch (e) {
         print('Verified: $e');
       }
@@ -167,15 +170,16 @@ class _U2fDemoState extends State<U2fDemo> {
 
     try {
       final result = await progress<U2fSignature?>(
-          text: Text(await _getMessage()),
-          result: () async {
-            final signature = await widget.u2f.authenticate(
-              challenge: widget.challenge,
-              appId: widget.appId,
-              keyHandles: [registration!.keyHandle],
-            );
-            return signature;
-          }());
+        text: Text(await _getMessage()),
+        result: () async {
+          final signature = await widget.u2f.authenticate(
+            challenge: widget.challenge,
+            appId: widget.appId,
+            keyHandles: [registration!.keyHandle],
+          );
+          return signature;
+        }(),
+      );
 
       if (result == null) {
         print('error');
@@ -297,7 +301,8 @@ class _HidDemoState extends State<HidDemo> {
             leading: const Icon(Icons.usb),
             title: Text(device.productName),
             subtitle: Text(
-                '${device.vendorId.toRadixString(16).padLeft(4, '0')}:${device.productId.toRadixString(16).padLeft(4, '0')}   ${device.serialNumber}'),
+              '${device.vendorId.toRadixString(16).padLeft(4, '0')}:${device.productId.toRadixString(16).padLeft(4, '0')}   ${device.serialNumber}',
+            ),
           ),
       ],
     );

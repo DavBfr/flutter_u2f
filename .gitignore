@@ -9,5 +9,4 @@ build/
 *.lock
 
 .flutter-plugins
-.gitignore
 .flutter-plugins-dependencies

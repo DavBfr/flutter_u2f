@@ -119,7 +119,7 @@ class UsbDevice extends HidDevice {
     while (isOpen && bytes.lengthInBytes - offset > 0) {
       final count = _api.write(
         raw,
-        buf.elementAt(offset).cast(),
+        (buf + offset).cast(),
         bytes.lengthInBytes - offset,
       );
       if (count == -1) {
@@ -137,7 +137,7 @@ extension PointerToString on Pointer<WChar> {
     final buffer = StringBuffer();
     var i = 0;
     while (true) {
-      final char = elementAt(i).value;
+      final char = (this + i).value;
       if (char == 0) {
         return buffer.toString();
       }

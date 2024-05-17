@@ -11,10 +11,10 @@ documentation: https://fidoalliance.org/specs/fido-u2f-v1.0-ps-20141009/fido-u2f
 topics:
  - auth
  - fido
- - 2fa
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
+  flutter: ">=3.19.0"
 
 dependencies:
   async: ^2.8.2
