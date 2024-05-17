@@ -1,6 +1,6 @@
 # FIDO Universal 2nd Factor
 
-This package supports NFC, USB and Webauthn Fido2 kays on iOS, Android, Windows, Linux, macOS, and Web.
+This package supports NFC, USB and Webauthn Fido2 keys on iOS, Android, Windows, Linux, macOS, and Web.
 
 ## Getting Started
 
