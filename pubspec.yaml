@@ -4,10 +4,9 @@ description: >
   Register a FIDO2 U2F key to your application
   Verify a FIDO2 U2F key assertion
 version: 2.0.0
-homepage: 
 repository: https://github.com/DavBfr/flutter_u2f
 issue_tracker: https://github.com/DavBfr/flutter_u2f/issues
-documentation: https://fidoalliance.org/specs/fido-u2f-v1.0-ps-20141009/fido-u2f-overview-ps-20141009.html
+homepage: https://fidoalliance.org/specs/fido-u2f-v1.0-ps-20141009/fido-u2f-overview-ps-20141009.html
 topics:
  - auth
  - fido
@@ -24,7 +23,6 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_nfc_kit: ^3.3.1
-  js: ^0.7.1
   logging: ^1.1.0
   plugin_platform_interface: ^2.1.0
   pointycastle: ^3.6.0
