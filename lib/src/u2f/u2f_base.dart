@@ -3,7 +3,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show mustCallSuper;
 
 import 'log.dart';
 import 'registration.dart';

@@ -5,7 +5,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show protected, mustCallSuper;
 
 import 'commands.dart';
 import 'error.dart';
