@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.0.1
+
+- Fix lints
+- Migrate to Dart 3.12
+
 ## 2.0.0
 
 - Update dependencies

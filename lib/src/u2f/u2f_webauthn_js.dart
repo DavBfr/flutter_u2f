@@ -46,9 +46,11 @@ class U2fV2Webauthn extends U2fV2Base {
     final options = web.CredentialCreationOptions(
       publicKey: web.PublicKeyCredentialCreationOptions(
         rp: web.PublicKeyCredentialRpEntity(
+          name: name,
           id: appId,
         )..name = 'U2F',
         user: web.PublicKeyCredentialUserEntity(
+          name: name,
           displayName: displayName,
           id: Uint8List.fromList(name.codeUnits).buffer.toJS,
         )..name = name,

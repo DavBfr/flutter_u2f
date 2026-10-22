@@ -71,7 +71,7 @@ class U2fV2Hid extends U2fV2Fido2 {
 
   static const _u2FhidBroadcast = 0xffffffff;
 
-  static final rnd = math.Random();
+  static final rnd = math.Random.secure();
 
   var _version = '(uninitialized)';
   String get deviceVersion => _version;
