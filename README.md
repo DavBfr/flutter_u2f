@@ -2,6 +2,10 @@
 
 This package supports NFC, USB and Webauthn Fido2 keys on iOS, Android, Windows, Linux, macOS, and Web.
 
+On macOS the USB-HID support is available both as a CocoaPods pod and as a
+Swift package (`macos/u2f/Package.swift`); either dependency manager can be
+used. hidapi is vendored inside the Swift package so it resolves offline.
+
 ## Getting Started
 
 ### Register

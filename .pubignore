@@ -1,1 +1,5 @@
 Makefile
+
+# Swift Package Manager build artifacts
+.swiftpm/
+macos/u2f/.build/

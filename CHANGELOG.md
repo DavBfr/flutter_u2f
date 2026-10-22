@@ -5,6 +5,7 @@
 - Fix lints
 - Migrate to Dart 3.12
 - Refactor HID device interface and implementation
+- Add Swift Package Manager support for macOS (CocoaPods is still supported)
 
 ## 2.0.0
 

@@ -10,3 +10,7 @@ build/
 
 .flutter-plugins
 .flutter-plugins-dependencies
+
+# Swift Package Manager build artifacts
+.swiftpm/
+macos/u2f/.build/

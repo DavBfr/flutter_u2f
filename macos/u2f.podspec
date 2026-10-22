@@ -13,11 +13,19 @@ A new flutter plugin project.
   s.license          = { :file => '../LICENSE' }
   s.author           = { 'Your Company' => 'email@example.com' }
   s.source           = { :path => '.' }
-  s.source_files     = 'Classes/**/*'
+  # Swift Package Manager (`u2f/Package.swift`) is the primary dependency
+  # manager. CocoaPods stays supported for applications that have not enabled
+  # SPM: it compiles the same sources and uses the `hidapi` pod.
+  s.source_files     = 'u2f/Sources/u2f/**/*.{h,c}'
+  s.public_header_files = 'u2f/Sources/u2f/include/**/*.h'
   s.dependency 'FlutterMacOS'
   s.dependency 'hidapi'
 
-  s.platform = :osx, '10.11'
-  s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES' }
+  s.platform = :osx, '12.0'
+  s.pod_target_xcconfig = {
+    'DEFINES_MODULE' => 'YES',
+    'HEADER_SEARCH_PATHS' => '"${PODS_TARGET_SRCROOT}/u2f/Sources/u2f/include"',
+    'SWIFT_VERSION' => '5.0',
+  }
   s.swift_version = '5.0'
 end

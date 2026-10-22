@@ -10,11 +10,18 @@ import 'hid_interface.dart';
 
 final HidInterface hid = _HidApi(Api(_dylib));
 
-const String _libName = 'u2f';
+const String _libName = 'hidapi';
 
 final DynamicLibrary _dylib = () {
   if (Platform.isMacOS || Platform.isIOS) {
-    return DynamicLibrary.open('$_libName.framework/$_libName');
+    // CocoaPods builds hidapi as a standalone framework.
+    try {
+      return DynamicLibrary.open('$_libName.framework/$_libName');
+    } on ArgumentError {
+      // Swift Package Manager links hidapi statically into the application,
+      // so the symbols are resolved from the process image instead.
+      return DynamicLibrary.process();
+    }
   } else if (Platform.isAndroid || Platform.isLinux) {
     return DynamicLibrary.open('libhidapi-hidraw.so.0');
   } else if (Platform.isWindows) {
