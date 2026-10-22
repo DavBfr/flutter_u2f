@@ -52,16 +52,9 @@ class U2fV2 {
     final availableMethods = await checkAvailability();
 
     yield* StreamGroup.merge<U2fV2Base>([
-      if (availableMethods.contains(U2fV2Methods.nfc))
-        U2fV2Nfc.poll(
-          timeout,
-        ),
+      if (availableMethods.contains(U2fV2Methods.nfc)) U2fV2Nfc.poll(timeout),
       if (availableMethods.contains(U2fV2Methods.hid))
-        U2fV2Hid.poll(
-          timeout,
-          delay,
-          onContinue,
-        ),
+        U2fV2Hid.poll(timeout, delay, onContinue),
       if (availableMethods.contains(U2fV2Methods.webauthn))
         U2fV2Webauthn.poll(),
     ]);
@@ -79,23 +72,22 @@ class U2fV2 {
     final devices = <U2fV2Base>[];
     final registration = Completer<U2fRegistration>();
     var canContinue = true;
-    final ls = _poll(
-      timeout: timeout,
-      onContinue: () => canContinue,
-    ).listen(
+    final ls = _poll(timeout: timeout, onContinue: () => canContinue).listen(
       (u2f) async {
         try {
           devices.add(u2f);
           await u2f.init();
-          registration.complete(await u2f.register(
-            challenge,
-            appId,
-            origin ?? 'https://$appId',
-            name ?? appId,
-            displayName ?? appId,
-            existingKeyHandles,
-            timeout,
-          ));
+          registration.complete(
+            await u2f.register(
+              challenge,
+              appId,
+              origin ?? 'https://$appId',
+              name ?? appId,
+              displayName ?? appId,
+              existingKeyHandles,
+              timeout,
+            ),
+          );
         } catch (e) {
           log.info(e);
           if (devices.length == 1) {
@@ -132,21 +124,20 @@ class U2fV2 {
     final devices = <U2fV2Base>[];
     final signature = Completer<U2fSignature>();
     var canContinue = true;
-    final ls = _poll(
-      timeout: timeout,
-      onContinue: () => canContinue,
-    ).listen(
+    final ls = _poll(timeout: timeout, onContinue: () => canContinue).listen(
       (u2f) async {
         try {
           devices.add(u2f);
           await u2f.init();
-          signature.complete(await u2f.authenticate(
-            appId,
-            keyHandles,
-            challenge,
-            origin ?? 'https://$appId',
-            timeout,
-          ));
+          signature.complete(
+            await u2f.authenticate(
+              appId,
+              keyHandles,
+              challenge,
+              origin ?? 'https://$appId',
+              timeout,
+            ),
+          );
         } catch (e) {
           log.info(e);
           if (devices.length == 1) {

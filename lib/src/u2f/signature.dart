@@ -68,10 +68,11 @@ class U2fSignature {
     return json.encode(response);
   }
 
-  Uint8List get signedMessage =>
-      Uint8List.fromList(sha256.convert(utf8.encode(appId)).bytes +
-          signatureData.sublist(0, 5) +
-          sha256.convert(clientData).bytes);
+  Uint8List get signedMessage => Uint8List.fromList(
+    sha256.convert(utf8.encode(appId)).bytes +
+        signatureData.sublist(0, 5) +
+        sha256.convert(clientData).bytes,
+  );
 
   bool verifySignature(ECPublicKey publicKey) {
     final signer = ECDSASigner(SHA256Digest());

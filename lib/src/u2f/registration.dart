@@ -20,10 +20,7 @@ class U2fRegistration extends U2fSignature {
     required this.registrationData,
     required super.clientData,
     required super.appId,
-  }) : super(
-          keyHandle: Uint8List(0),
-          signatureData: Uint8List(0),
-        );
+  }) : super(keyHandle: Uint8List(0), signatureData: Uint8List(0));
 
   factory U2fRegistration.fromWebauthn({
     required Uint8List clientData,
@@ -55,11 +52,13 @@ class U2fRegistration extends U2fSignature {
     registrationData.addByte(0x05); // reserved byte
     registrationData.addByte(0x04); // user public key type
     // user public key X coordinate
-    final x = publicKeyObject[const CborSmallInt(4294967294)] ??
+    final x =
+        publicKeyObject[const CborSmallInt(4294967294)] ??
         publicKeyObject[const CborSmallInt(-2)];
     registrationData.add((x! as CborBytes).bytes);
     // user public key Y coordinate
-    final y = publicKeyObject[const CborSmallInt(4294967293)] ??
+    final y =
+        publicKeyObject[const CborSmallInt(4294967293)] ??
         publicKeyObject[const CborSmallInt(-3)];
     registrationData.add((y! as CborBytes).bytes);
     // Length of the key ID
@@ -135,8 +134,9 @@ class U2fRegistration extends U2fSignature {
     final x509 = ASN1Parser(certificate).nextObject() as ASN1Sequence;
     final tbs = x509.elements![0] as ASN1Sequence;
     final pk = tbs.elements![6] as ASN1Sequence;
-    final kp =
-        Uint8List.fromList((pk.elements![1] as ASN1BitString).stringValues!);
+    final kp = Uint8List.fromList(
+      (pk.elements![1] as ASN1BitString).stringValues!,
+    );
 
     if (kp[0] != 0x04) {
       throw const U2fException('Only P-256 NIST elliptic curve supported');
@@ -150,12 +150,12 @@ class U2fRegistration extends U2fSignature {
 
   @override
   Uint8List get signedMessage => Uint8List.fromList(
-        [0] +
-            sha256.convert(utf8.encode(appId)).bytes +
-            sha256.convert(clientData).bytes +
-            keyHandle +
-            registrationData.sublist(1, 66),
-      );
+    [0] +
+        sha256.convert(utf8.encode(appId)).bytes +
+        sha256.convert(clientData).bytes +
+        keyHandle +
+        registrationData.sublist(1, 66),
+  );
 
   @override
   String toString() {

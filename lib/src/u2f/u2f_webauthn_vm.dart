@@ -51,8 +51,9 @@ class U2fV2Webauthn extends U2fV2Base {
       'type': 'webauthn.create',
     };
 
-    final clientData =
-        Uint8List.fromList(utf8.encode(json.encode(clientDataJSON)));
+    final clientData = Uint8List.fromList(
+      utf8.encode(json.encode(clientDataJSON)),
+    );
 
     final attestation = calloc<REGISTER_ATTESTATION>();
 
@@ -112,8 +113,9 @@ class U2fV2Webauthn extends U2fV2Base {
       'type': 'webauthn.get',
     };
 
-    final clientData =
-        Uint8List.fromList(utf8.encode(json.encode(clientDataJSON)));
+    final clientData = Uint8List.fromList(
+      utf8.encode(json.encode(clientDataJSON)),
+    );
 
     final validate = calloc<VALIDATE_ATTESTATION>();
 
@@ -145,8 +147,9 @@ class U2fV2Webauthn extends U2fV2Base {
           validate.ref.keyHandle.asTypedList(validate.ref.keyHandleLength),
         ),
         authenticatorData: Uint8List.fromList(
-          validate.ref.authenticatorData
-              .asTypedList(validate.ref.authenticatorDataLength),
+          validate.ref.authenticatorData.asTypedList(
+            validate.ref.authenticatorDataLength,
+          ),
         ),
         clientData: clientData,
         signature: Uint8List.fromList(

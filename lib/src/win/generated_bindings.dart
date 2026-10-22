@@ -8,16 +8,15 @@ import 'dart:ffi' as ffi;
 class Api {
   /// Holds the symbol lookup function.
   final ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName)
-      _lookup;
+  _lookup;
 
   /// The symbols are looked up in [dynamicLibrary].
   Api(ffi.DynamicLibrary dynamicLibrary) : _lookup = dynamicLibrary.lookup;
 
   /// The symbols are looked up with [lookup].
   Api.fromLookup(
-      ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName)
-          lookup)
-      : _lookup = lookup;
+    ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName) lookup,
+  ) : _lookup = lookup;
 
   int RegisterFIDO2Token(
     int clientDataLength,
@@ -43,20 +42,25 @@ class Api {
     );
   }
 
-  late final _RegisterFIDO2TokenPtr = _lookup<
-      ffi.NativeFunction<
+  late final _RegisterFIDO2TokenPtr =
+      _lookup<
+        ffi.NativeFunction<
           ffi.Int Function(
-              ffi.UnsignedLong,
-              ffi.Pointer<ffi.Uint8>,
-              ffi.Pointer<ffi.WChar>,
-              ffi.Pointer<ffi.WChar>,
-              ffi.Pointer<ffi.WChar>,
-              ffi.UnsignedLong,
-              ffi.Pointer<KEY_HANDLE>,
-              ffi.UnsignedLong,
-              ffi.Pointer<REGISTER_ATTESTATION>)>>('RegisterFIDO2Token');
-  late final _RegisterFIDO2Token = _RegisterFIDO2TokenPtr.asFunction<
-      int Function(
+            ffi.UnsignedLong,
+            ffi.Pointer<ffi.Uint8>,
+            ffi.Pointer<ffi.WChar>,
+            ffi.Pointer<ffi.WChar>,
+            ffi.Pointer<ffi.WChar>,
+            ffi.UnsignedLong,
+            ffi.Pointer<KEY_HANDLE>,
+            ffi.UnsignedLong,
+            ffi.Pointer<REGISTER_ATTESTATION>,
+          )
+        >
+      >('RegisterFIDO2Token');
+  late final _RegisterFIDO2Token =
+      _RegisterFIDO2TokenPtr.asFunction<
+        int Function(
           int,
           ffi.Pointer<ffi.Uint8>,
           ffi.Pointer<ffi.WChar>,
@@ -65,7 +69,9 @@ class Api {
           int,
           ffi.Pointer<KEY_HANDLE>,
           int,
-          ffi.Pointer<REGISTER_ATTESTATION>)>();
+          ffi.Pointer<REGISTER_ATTESTATION>,
+        )
+      >();
 
   int ValidateFIDO2Tokens(
     int clientDataLength,
@@ -87,47 +93,58 @@ class Api {
     );
   }
 
-  late final _ValidateFIDO2TokensPtr = _lookup<
-      ffi.NativeFunction<
+  late final _ValidateFIDO2TokensPtr =
+      _lookup<
+        ffi.NativeFunction<
           ffi.Int Function(
-              ffi.UnsignedLong,
-              ffi.Pointer<ffi.Uint8>,
-              ffi.Pointer<ffi.WChar>,
-              ffi.UnsignedLong,
-              ffi.Pointer<KEY_HANDLE>,
-              ffi.UnsignedLong,
-              ffi.Pointer<VALIDATE_ATTESTATION>)>>('ValidateFIDO2Tokens');
-  late final _ValidateFIDO2Tokens = _ValidateFIDO2TokensPtr.asFunction<
-      int Function(int, ffi.Pointer<ffi.Uint8>, ffi.Pointer<ffi.WChar>, int,
-          ffi.Pointer<KEY_HANDLE>, int, ffi.Pointer<VALIDATE_ATTESTATION>)>();
+            ffi.UnsignedLong,
+            ffi.Pointer<ffi.Uint8>,
+            ffi.Pointer<ffi.WChar>,
+            ffi.UnsignedLong,
+            ffi.Pointer<KEY_HANDLE>,
+            ffi.UnsignedLong,
+            ffi.Pointer<VALIDATE_ATTESTATION>,
+          )
+        >
+      >('ValidateFIDO2Tokens');
+  late final _ValidateFIDO2Tokens =
+      _ValidateFIDO2TokensPtr.asFunction<
+        int Function(
+          int,
+          ffi.Pointer<ffi.Uint8>,
+          ffi.Pointer<ffi.WChar>,
+          int,
+          ffi.Pointer<KEY_HANDLE>,
+          int,
+          ffi.Pointer<VALIDATE_ATTESTATION>,
+        )
+      >();
 
-  int FreeRegister(
-    ffi.Pointer<REGISTER_ATTESTATION> attestation,
-  ) {
-    return _FreeRegister(
-      attestation,
-    );
+  int FreeRegister(ffi.Pointer<REGISTER_ATTESTATION> attestation) {
+    return _FreeRegister(attestation);
   }
 
-  late final _FreeRegisterPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Int Function(ffi.Pointer<REGISTER_ATTESTATION>)>>('FreeRegister');
-  late final _FreeRegister = _FreeRegisterPtr.asFunction<
-      int Function(ffi.Pointer<REGISTER_ATTESTATION>)>();
+  late final _FreeRegisterPtr =
+      _lookup<
+        ffi.NativeFunction<ffi.Int Function(ffi.Pointer<REGISTER_ATTESTATION>)>
+      >('FreeRegister');
+  late final _FreeRegister =
+      _FreeRegisterPtr.asFunction<
+        int Function(ffi.Pointer<REGISTER_ATTESTATION>)
+      >();
 
-  int FreeValidate(
-    ffi.Pointer<VALIDATE_ATTESTATION> validate,
-  ) {
-    return _FreeValidate(
-      validate,
-    );
+  int FreeValidate(ffi.Pointer<VALIDATE_ATTESTATION> validate) {
+    return _FreeValidate(validate);
   }
 
-  late final _FreeValidatePtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Int Function(ffi.Pointer<VALIDATE_ATTESTATION>)>>('FreeValidate');
-  late final _FreeValidate = _FreeValidatePtr.asFunction<
-      int Function(ffi.Pointer<VALIDATE_ATTESTATION>)>();
+  late final _FreeValidatePtr =
+      _lookup<
+        ffi.NativeFunction<ffi.Int Function(ffi.Pointer<VALIDATE_ATTESTATION>)>
+      >('FreeValidate');
+  late final _FreeValidate =
+      _FreeValidatePtr.asFunction<
+        int Function(ffi.Pointer<VALIDATE_ATTESTATION>)
+      >();
 }
 
 final class KEY_HANDLE extends ffi.Struct {

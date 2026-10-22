@@ -1,9 +1,10 @@
 # Changelog
 
-## 2.0.1
+## 2.1.0
 
 - Fix lints
 - Migrate to Dart 3.12
+- Refactor HID device interface and implementation
 
 ## 2.0.0
 

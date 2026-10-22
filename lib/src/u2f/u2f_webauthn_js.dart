@@ -19,8 +19,9 @@ class U2fV2Webauthn extends U2fV2Base {
 
     if (web.window.location.protocol != 'https:') {
       return false;
-    } else if (RegExp(r'(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){4}')
-        .hasMatch(web.window.location.hostname)) {
+    } else if (RegExp(
+      r'(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){4}',
+    ).hasMatch(web.window.location.hostname)) {
       return false;
     } else if (!web.window.navigator.hasProperty('credentials'.toJS).toDart) {
       return false;
@@ -45,10 +46,8 @@ class U2fV2Webauthn extends U2fV2Base {
   ) async {
     final options = web.CredentialCreationOptions(
       publicKey: web.PublicKeyCredentialCreationOptions(
-        rp: web.PublicKeyCredentialRpEntity(
-          name: name,
-          id: appId,
-        )..name = 'U2F',
+        rp: web.PublicKeyCredentialRpEntity(name: name, id: appId)
+          ..name = 'U2F',
         user: web.PublicKeyCredentialUserEntity(
           name: name,
           displayName: displayName,
@@ -56,10 +55,7 @@ class U2fV2Webauthn extends U2fV2Base {
         )..name = name,
         challenge: Uint8List.fromList(challenge.codeUnits).buffer.toJS,
         pubKeyCredParams: [
-          web.PublicKeyCredentialParameters(
-            alg: -7,
-            type: 'public-key',
-          ),
+          web.PublicKeyCredentialParameters(alg: -7, type: 'public-key'),
         ].toJS,
         timeout: timeout.inSeconds,
         authenticatorSelection: web.AuthenticatorSelectionCriteria(
@@ -79,9 +75,9 @@ class U2fV2Webauthn extends U2fV2Base {
       ),
     );
 
-    final newCredential = (await web.window.navigator.credentials
-        .create(options)
-        .toDart)! as web.PublicKeyCredential;
+    final newCredential =
+        (await web.window.navigator.credentials.create(options).toDart)!
+            as web.PublicKeyCredential;
 
     final response =
         newCredential.response as web.AuthenticatorAttestationResponse;
@@ -118,9 +114,9 @@ class U2fV2Webauthn extends U2fV2Base {
       ),
     );
 
-    final assertedCredential = (await web.window.navigator.credentials
-        .get(options)
-        .toDart)! as web.PublicKeyCredential;
+    final assertedCredential =
+        (await web.window.navigator.credentials.get(options).toDart)!
+            as web.PublicKeyCredential;
 
     final response =
         assertedCredential.response as web.AuthenticatorAssertionResponse;

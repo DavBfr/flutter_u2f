@@ -124,10 +124,8 @@ class U2fV2Hid extends U2fV2Fido2 {
     }
   }
 
-  Future<void> _write(List<int> bytes) async {
-    // final w = Uint8List(64)..setAll(0, bytes);
+  Future<bool> _write(List<int> bytes) async {
     final w = Uint8List.fromList([0] + bytes);
-    // print('WRITE $w');
     return _device.write(w);
   }
 

@@ -15,9 +15,10 @@ const String _libName = 'u2f';
 final DynamicLibrary _dylib = () {
   if (Platform.isMacOS || Platform.isIOS) {
     return DynamicLibrary.open('$_libName.framework/$_libName');
-  }
-  if (Platform.isAndroid || Platform.isLinux) {
+  } else if (Platform.isAndroid || Platform.isLinux) {
     return DynamicLibrary.open('libhidapi-hidraw.so.0');
+  } else if (Platform.isWindows) {
+    return DynamicLibrary.open('hidapi.dll');
   }
   throw UnsupportedError('Unknown platform: ${Platform.operatingSystem}');
 }();
@@ -95,40 +96,100 @@ class UsbDevice extends HidDevice {
     final raw = _raw;
     if (raw == null) throw Exception();
     final buf = calloc<Uint8>(length);
-    var count = 0;
-    while (isOpen) {
-      count = _api.read(raw, buf.cast(), length);
-      if (count == -1) {
-        break;
-      } else if (count > 0) {
-        yield buf.asTypedList(count);
+    try {
+      var count = 0;
+      while (isOpen) {
+        count = _api.read(raw, buf.cast(), length);
+        if (count == -1) {
+          break;
+        } else if (count > 0) {
+          yield buf.asTypedList(count);
+        }
+        await Future.delayed(Duration(milliseconds: duration));
       }
-      await Future.delayed(Duration(milliseconds: duration));
+    } finally {
+      calloc.free(buf);
     }
-    calloc.free(buf);
   }
 
   @override
-  Future<void> write(Uint8List bytes) async {
+  Future<bool> write(Uint8List bytes) async {
     final raw = _raw;
     if (raw == null) throw Exception();
     final buf = calloc<Uint8>(bytes.lengthInBytes);
-    final u8Buf = buf.asTypedList(bytes.lengthInBytes);
-    u8Buf.setRange(0, bytes.lengthInBytes, bytes);
-    var offset = 0;
-    while (isOpen && bytes.lengthInBytes - offset > 0) {
-      final count = _api.write(
-        raw,
-        (buf + offset).cast(),
-        bytes.lengthInBytes - offset,
-      );
-      if (count == -1) {
-        break;
-      } else {
-        offset += count;
+    try {
+      final u8Buf = buf.asTypedList(bytes.lengthInBytes);
+      u8Buf.setRange(0, bytes.lengthInBytes, bytes);
+      var offset = 0;
+      while (isOpen && bytes.lengthInBytes - offset > 0) {
+        final count = _api.write(
+          raw,
+          (buf + offset).cast(),
+          bytes.lengthInBytes - offset,
+        );
+        if (count == -1) {
+          return false;
+        } else {
+          offset += count;
+        }
+      }
+    } finally {
+      calloc.free(buf);
+    }
+    return true;
+  }
+
+  @override
+  Future<Uint8List> getFeatures(Uint8List input) async {
+    final raw = _raw;
+    if (raw == null) throw Exception('Device not open');
+    if (Platform.isWindows) {
+      final bufLen = input.length + 1;
+      final buf = malloc<Uint8>(bufLen);
+      try {
+        buf.asTypedList(bufLen).setAll(0, input);
+        final result = _api.get_feature_report(raw, buf.cast(), bufLen);
+        Uint8List out;
+        if (result > 0) {
+          out = Uint8List.fromList(buf.asTypedList(result).skip(1).toList());
+        } else {
+          out = Uint8List(0);
+        }
+        return out;
+      } finally {
+        calloc.free(buf);
+      }
+    } else {
+      final bufLen = input.length;
+      final buf = malloc<Uint8>(bufLen);
+      try {
+        buf.asTypedList(bufLen).setAll(0, input);
+        final result = _api.get_feature_report(raw, buf.cast(), bufLen);
+        Uint8List out;
+        if (result > 0) {
+          out = Uint8List.fromList(buf.asTypedList(result));
+        } else {
+          out = Uint8List(0);
+        }
+        return out;
+      } finally {
+        calloc.free(buf);
       }
     }
-    calloc.free(buf);
+  }
+
+  @override
+  Future<int> setFeatures(Uint8List input) async {
+    final raw = _raw;
+    if (raw == null) throw Exception('Device not open');
+    final bufLen = input.length;
+    final buf = malloc<Uint8>(bufLen);
+    try {
+      buf.asTypedList(bufLen).setAll(0, input);
+      return _api.send_feature_report(raw, buf.cast(), bufLen);
+    } finally {
+      calloc.free(buf);
+    }
   }
 }
 

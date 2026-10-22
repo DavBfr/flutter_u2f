@@ -3,7 +3,7 @@ description: >
   FIDO Universal 2nd Factor.
   Register a FIDO2 U2F key to your application
   Verify a FIDO2 U2F key assertion
-version: 2.0.1
+version: 2.1.0
 repository: https://github.com/DavBfr/flutter_u2f
 issue_tracker: https://github.com/DavBfr/flutter_u2f/issues
 homepage: https://fidoalliance.org/specs/fido-u2f-v1.0-ps-20141009/fido-u2f-overview-ps-20141009.html

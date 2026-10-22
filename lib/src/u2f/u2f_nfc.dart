@@ -11,7 +11,8 @@ import 'log.dart';
 import 'u2f_fido2.dart';
 
 export 'package:flutter_nfc_kit/flutter_nfc_kit.dart'
-    if (dart.library.js) 'nfc_js.dart' show NFCAvailability;
+    if (dart.library.js) 'nfc_js.dart'
+    show NFCAvailability;
 
 /// FIDO NFC Protocol Specification v1.0
 /// https://fidoalliance.org/specs/fido-u2f-v1.2-ps-20170411/fido-u2f-nfc-protocol-v1.2-ps-20170411.html
@@ -70,7 +71,8 @@ class U2fV2Nfc extends U2fV2Fido2 {
 
     while ((status & 0xff00) == 0x6100) {
       final resp = await FlutterNfcKit.transceive(cmd);
-      status = ((0xff & resp[resp.length - 2]) << 8) |
+      status =
+          ((0xff & resp[resp.length - 2]) << 8) |
           (0xff & resp[resp.length - 1]);
       data.add(resp.sublist(0, resp.length - 2));
       cmd = Uint8List.fromList(getResponseCommand);

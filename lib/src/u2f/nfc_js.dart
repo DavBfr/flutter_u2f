@@ -1,10 +1,6 @@
 // ignore_for_file: constant_identifier_names
 
-enum NFCAvailability {
-  not_supported,
-  disabled,
-  available,
-}
+enum NFCAvailability { not_supported, disabled, available }
 
 enum NFCTagType {
   iso7816,

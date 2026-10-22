@@ -74,10 +74,13 @@ abstract class U2fV2Fido2 extends U2fV2Base {
     apdu[6] = data.length & 0xff; // packet length LSB
     apdu.setAll(7, data);
     log.finest(
-        'SEND ${apdu.map((e) => e.toRadixString(16).padLeft(2, '0')).join(':')}');
+      'SEND ${apdu.map((e) => e.toRadixString(16).padLeft(2, '0')).join(':')}',
+    );
     var resp = await send(apdu);
-    var fr = _Fido2Response(resp.sublist(0, resp.lengthInBytes - 2),
-        resp[resp.lengthInBytes - 2] << 8 | resp[resp.lengthInBytes - 1]);
+    var fr = _Fido2Response(
+      resp.sublist(0, resp.lengthInBytes - 2),
+      resp[resp.lengthInBytes - 2] << 8 | resp[resp.lengthInBytes - 1],
+    );
 
     final stopWatch = Stopwatch()..start();
     try {
@@ -91,15 +94,18 @@ abstract class U2fV2Fido2 extends U2fV2Base {
           throw const U2fTimeout('Timeout waiting for user presence');
         }
         resp = await send(apdu);
-        fr = _Fido2Response(resp.sublist(0, resp.lengthInBytes - 2),
-            resp[resp.lengthInBytes - 2] << 8 | resp[resp.lengthInBytes - 1]);
+        fr = _Fido2Response(
+          resp.sublist(0, resp.lengthInBytes - 2),
+          resp[resp.lengthInBytes - 2] << 8 | resp[resp.lengthInBytes - 1],
+        );
       }
     } finally {
       stopWatch.stop();
     }
 
     log.finest(
-        'RECV (0x${fr.status.toRadixString(16).padLeft(4, '0')}) ${fr.bytes.map((e) => e.toRadixString(16).padLeft(2, '0')).join(':')}');
+      'RECV (0x${fr.status.toRadixString(16).padLeft(4, '0')}) ${fr.bytes.map((e) => e.toRadixString(16).padLeft(2, '0')).join(':')}',
+    );
     return fr;
   }
 
